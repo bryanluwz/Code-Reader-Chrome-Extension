@@ -14,3 +14,5 @@ chrome.runtime.onMessage.addListener(
 			return true; // Indicates that sendResponse will be called asynchronously
 		}
 	});
+
+alert('content script loaded');

@@ -1,7 +1,9 @@
 const path = require('path');
 
 module.exports = {
-	entry: './popup.js',
+	entry: {
+		background: './service-worker.js'
+	},
 	output: {
 		path: path.resolve(__dirname, 'dist'), // Replace with your desired output directory
 		filename: 'bundle.js',
