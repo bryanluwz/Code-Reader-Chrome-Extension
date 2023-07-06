@@ -284,9 +284,9 @@ function detectQRCodes() {
 				try {
 					console.log("Decoding this image: " + img);
 					const result = await codeReader.decodeFromImageUrl(img);
-					console.log("Decoded: " + result);
+					console.log("Decoded: " + result.text);
 					console.log("\n");
-					links.push(result);
+					links.push(result.text);
 				} catch (error) {
 					console.log("Cannot decode this image: " + img);
 					console.log("\n");
@@ -305,6 +305,11 @@ function detectQRCodes() {
 
 			linkElement.href = link;
 			linkElement.textContent = link;
+			linkElement.addEventListener('click', (event) => {
+				event.preventDefault();
+				chrome.tabs.create({ url: link });
+				return false;
+			});
 
 			listItem.appendChild(linkElement);
 			contentList.appendChild(listItem);

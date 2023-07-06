@@ -105,4 +105,5 @@
 
 .content-container .content #content-list li {
     word-wrap: break-word;
+    cursor: pointer;
 }
