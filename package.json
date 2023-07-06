@@ -9,11 +9,11 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@zxing/library": "^0.20.0"
-  },
   "devDependencies": {
     "webpack": "^5.88.1",
     "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@zxing/browser": "^0.1.4"
   }
 }

@@ -26,7 +26,7 @@
 /* Title */
 .title-container {
     width: 100%;
-    height: 6%;
+    height: 30px;
 
     text-align: center;
 
@@ -38,9 +38,9 @@
 /* Content */
 .content-container {
     width: 100%;
-    height: 90%;
+    height: 270px;
 
-    margin-top: 20px;
+    /* margin-top: 10px; */
 
     text-align: center;
 
@@ -53,9 +53,10 @@
 }
 
 /* Refresh Button */
-.content-container #refresh-button {
+.content-container #detect-button {
     width: 80%;
-    height: 10%;
+    min-height: 30px;
+    height: 30px;
 
     border: none;
     outline: none;
@@ -73,14 +74,16 @@
     transition: 0.4s ease all;
 }
 
-.content-container #refresh-button:hover {
+.content-container #detect-button:hover {
     background-color: var(--lavender-pastel-1);
 }
 
 /* QR Link List Container*/
 .content-container .content {
     width: 100%;
-    height: 90%;
+    min-height: 220px;
+    max-height: 220px;
+    height: 220px;
 
     margin-bottom: 20px;
 
@@ -98,4 +101,8 @@
     color: var(--lavender-pastel-font-1);
 
     overflow-y: auto;
+}
+
+.content-container .content #content-list li {
+    word-wrap: break-word;
 }

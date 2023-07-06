@@ -268,62 +268,35 @@ var __webpack_exports__ = {};
   !*** ./popup.js ***!
   \******************/
 // Setup reader and other variables
-let reader;
-
-const imageSrcs = [];
-
+let codeReader;
+const imgs = [];
 const links = [];
 
 function detectQRCodes() {
-	// Load ZXing library asynchronously using import()
-	__webpack_require__.e(/*! import() */ "vendors-node_modules_zxing_library_esm_index_js").then(__webpack_require__.bind(__webpack_require__, /*! @zxing/library */ "./node_modules/@zxing/library/esm/index.js")).then((ZXingLibrary) => {
-		const { MultiFormatReader, BarcodeFormat, DecodeHintType, RGBLuminanceSource, BinaryBitmap, HybridBinarizer } = ZXingLibrary;
+	// Load ZXing browser asynchronously using import()
+	__webpack_require__.e(/*! import() */ "vendors-node_modules_zxing_browser_esm_index_js").then(__webpack_require__.bind(__webpack_require__, /*! @zxing/browser */ "./node_modules/@zxing/browser/esm/index.js")).then(async ({ BrowserQRCodeReader }) => {
+		// Create a new reader
+		codeReader = new BrowserQRCodeReader();
 
-		reader = new MultiFormatReader();
-
-		const hints = new Map();
-		hints.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]);
-		reader.setHints(hints);
-
-		// Iterate through imgSrcs and capture each image using html2canvas
-		imageSrcs.forEach((imgSrc) => {
-			// Create an Image object with the imgSrc
-			const capturedImage = new Image();
-			capturedImage.src = imgSrc;
-
-			// Pass captured image to ZXing for decoding
-			capturedImage.onload = () => {
-				// Get data
-				const width = capturedImage.width;
-				const height = capturedImage.height;
-
-				const canvas = document.createElement('canvas');
-				const context = canvas.getContext('2d');
-
-				canvas.width = width;
-				canvas.height = height;
-
-				// Draw the captured image onto the canvas and get image data from the canvas
-				context.drawImage(capturedImage, 0, 0, width, height);
-
-				const imageData = context.getImageData(0, 0, width, height).data;
-
-				// Pass the captured image to ZXing for QR code decoding
-				const luminanceSource = new RGBLuminanceSource(imageData, width, height);
-				const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
-
+		// Loop through imgs elements and decode each one
+		await Promise.all(
+			imgs.map(async (img) => {
 				try {
-					const result = reader.decode(binaryBitmap);
-					links.push(result.text);
+					console.log("Decoding this image: " + img);
+					const result = await codeReader.decodeFromImageUrl(img);
+					console.log("Decoded: " + result);
+					console.log("\n");
+					links.push(result);
 				} catch (error) {
-					;
+					console.log("Cannot decode this image: " + img);
+					console.log("\n");
 				}
-			};
-		});
-
+			})
+		);
 
 		// Get element of id 'content-list' and append each link to it
 		const contentList = document.getElementById('content-list');
+		contentList.innerHTML = '';
 
 		// Each link is just a link item, and a link (<a/> tag)
 		links.forEach((link) => {
@@ -336,42 +309,59 @@ function detectQRCodes() {
 			listItem.appendChild(linkElement);
 			contentList.appendChild(listItem);
 		});
+
+		if (links.length === 0) {
+			const listItem = document.createElement('li');
+			listItem.textContent = "No QR codes detected";
+
+			contentList.appendChild(listItem);
+		}
 	})
 		.catch((error) => {
 			console.log(error);
 		});
 };
 
-function extractImageTags() {
-	chrome.scripting.executeScript({
-		target: { tabId: sender.tab.id },
-		files: ['contentScript.js']
-	});
-}
+function loadImages(callbackFunction = () => { }) {
+	// Send message to get images to content-script.js
+	(async () => {
+		const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+		if (!tab) {
+			console.log("No tab found");
+			return;
+		}
 
-function loadImages(callbackFunction) {
-	// Send message to get images to service-worker.js
-	chrome.runtime.sendMessage({ action: 'getImages' }, (response) => {
-		const responseImageSrcs = response.imageSrcs;
+		const response = await chrome.tabs.sendMessage(tab.id, { action: 'extractImages' });
 
-		responseImageSrcs.forEach(imgSrc => {
-			imageSrcs.push(imgSrc);
+		if (!response) {
+			console.log("No response");
+			return;
+		};
+
+		const responseImgs = response.imgs;
+
+		// Clear imageSrcs
+		imgs.length = 0;
+
+		responseImgs.forEach(img => {
+			imgs.push(img);
 		});
 
 		callbackFunction();
-	});
+	})();
 }
 
 // Run these after every thing loads
-window.onload = () => {
+document.addEventListener("DOMContentLoaded", () => {
+	// Load images
+	loadImages(detectQRCodes);
+
 	// Add event listener to refresh button
 	const button = document.getElementById('detect-button');
 	button.addEventListener('click', () => {
 		loadImages(detectQRCodes);
-		console.log("Links: ", links);
 	});
-
-};
+});
 
 /******/ })()
 ;
