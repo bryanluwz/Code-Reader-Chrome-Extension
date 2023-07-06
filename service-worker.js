@@ -3,26 +3,38 @@ chrome.runtime.onInstalled.addListener(() => {
 	chrome.storage.local.set({ enabled: false });
 });
 
+var enabledDictionary = {
+
+};
+
 chrome.action.onClicked.addListener((tab) => {
 	// Retrieve the current state from storage
-	chrome.storage.local.get('enabled', (result) => {
-		const isEnabled = result.enabled || false;
+	const isEnabled = enabledDictionary[tab.id] || false;
 
-		// Toggle the state
-		const updatedState = !isEnabled;
+	// Toggle the state
+	const updatedState = !isEnabled;
 
-		// Save the updated state to storage
-		chrome.storage.local.set({ enabled: updatedState });
+	isInjected = true;
 
-		// Set the appropriate icon based on the state
-		const iconPath = updatedState ? 'icon_enabled.png' : 'icon_disabled.png';
-		chrome.action.setIcon({ path: iconPath });
+	// Save the updated state to storage
+	chrome.storage.local.set({ enabled: updatedState });
 
-		// Execute or disable the content script based on the state
-		if (updatedState) {
-			chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content-script.js'] });
-		} else {
-			// chrome.scripting.removeScript({ target: { tabId: tab.id }, files: ['content-script.js'] });
-		}
-	});
+	// Set the appropriate icon based on the state
+	const iconPath = updatedState ? 'icon_enabled.png' : 'icon_disabled.png';
+	chrome.action.setIcon({ path: iconPath });
+
+	// Execute or disable the content script based on the state	
+	// Bruh I swear to GD, there is not content script shown, yet it still works
+	(async () => { console.log(await chrome.scripting.getRegisteredContentScripts()); })()
+		.then(() => {
+			chrome.tabs.sendMessage(tab.id, { type: "updateState", enabled: updatedState })
+				.then(() => {
+					enabledDictionary[tab.id] = updatedState;
+				});
+		});
+});
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+	const iconPath = enabledDictionary[activeInfo.tabId] ? 'icon_enabled.png' : 'icon_disabled.png';
+	chrome.action.setIcon({ path: iconPath });
 });

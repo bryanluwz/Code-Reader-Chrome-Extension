@@ -10,6 +10,12 @@
     "background": {
         "service_worker": "service-worker.js"
     },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["content-script.js"]
+        }
+    ],
     "permissions": ["activeTab", "tabs", "scripting", "storage"],
     "host_permissions": ["http://*/*", "https://*/*"]
 }

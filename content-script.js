@@ -1,18 +1,19 @@
-// Listen for messages from the background script
-chrome.runtime.onMessage.addListener(
-	(message, sender, sendResponse) => {
-		if (message.action === 'extractImages') {
-			const imgs = Array.from(document.getElementsByTagName('img')).map(img => img.src);
+function onMouseMove(e) {
+	console.log(e.pageX, e.pageY);
+}
 
-			// Send the img tags back to the background script
-			const returnResponse = {
-				imgs: imgs
-			};
 
-			sendResponse(returnResponse);
-
-			return true; // Indicates that sendResponse will be called asynchronously
+// Check for mouse location
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message.type === "updateState") {
+		if (message.enabled) {
+			console.log("Enabled");
+			document.addEventListener("mousemove", onMouseMove);
 		}
-	});
-
-alert('content script loaded');
+		else {
+			console.log("Disabled");
+			document.removeEventListener("mousemove", onMouseMove);
+		}
+	}
+}
+);
