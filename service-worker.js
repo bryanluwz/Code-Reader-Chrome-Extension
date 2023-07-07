@@ -11,8 +11,6 @@ chrome.action.onClicked.addListener((tab) => {
 	// Toggle the state
 	const updatedState = !isEnabled;
 
-	isInjected = true;
-
 	// Save the updated state to storage
 	chrome.storage.local.set({ enabled: updatedState });
 
@@ -39,14 +37,22 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 	chrome.action.setIcon({ path: iconPath });
 });
 
-// Listen for tab removal
-chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-	delete enabledDictionary[tabId];
-});
+// Listen for tab removal (temp disabled)
+// chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+// 	delete enabledDictionary[tabId];
+// });
 
-// Listen for tab updates (i.e. tab refresh)
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-	enabledDictionary[tabId] = false;
-	const iconPath = icon_disabled;
-	chrome.action.setIcon({ path: iconPath });
+// Listen for tab updates (i.e. tab refresh) (temp disabled)
+// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+// 	enabledDictionary[tabId] = false;
+// 	const iconPath = icon_disabled;
+// 	chrome.action.setIcon({ path: iconPath });
+// });
+
+// Listen for messages from content script
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	if (message.action === "openNewTab") {
+		chrome.tabs.create({ url: message.link });
+		sendResponse({ success: true });
+	}
 });

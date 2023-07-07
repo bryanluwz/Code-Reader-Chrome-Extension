@@ -16,6 +16,12 @@
             "js": ["dist/content-script.bundle.js"]
         }
     ],
-    "permissions": ["activeTab", "tabs", "scripting", "storage"],
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "scripting",
+        "storage",
+        "clipboardWrite"
+    ],
     "host_permissions": ["http://*/*", "https://*/*"]
 }
