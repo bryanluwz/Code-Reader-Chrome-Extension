@@ -1,12 +1,9 @@
-chrome.runtime.onInstalled.addListener(() => {
-	// Set the initial state of the extension
-	chrome.storage.local.set({ enabled: false });
-});
+var enabledDictionary = {};
 
-var enabledDictionary = {
+const icon_enabled = 'icon_enabled.png';
+const icon_disabled = 'icon_disabled.png';
 
-};
-
+// Listen for a click on the extension icon
 chrome.action.onClicked.addListener((tab) => {
 	// Retrieve the current state from storage
 	const isEnabled = enabledDictionary[tab.id] || false;
@@ -20,21 +17,36 @@ chrome.action.onClicked.addListener((tab) => {
 	chrome.storage.local.set({ enabled: updatedState });
 
 	// Set the appropriate icon based on the state
-	const iconPath = updatedState ? 'icon_enabled.png' : 'icon_disabled.png';
+	const iconPath = updatedState ? icon_enabled : icon_disabled;
 	chrome.action.setIcon({ path: iconPath });
 
 	// Execute or disable the content script based on the state	
 	// Bruh I swear to GD, there is not content script shown, yet it still works
 	(async () => { console.log(await chrome.scripting.getRegisteredContentScripts()); })()
 		.then(() => {
-			chrome.tabs.sendMessage(tab.id, { type: "updateState", enabled: updatedState })
+			chrome.tabs.sendMessage(tab.id, { action: "updateState", enabled: updatedState })
 				.then(() => {
 					enabledDictionary[tab.id] = updatedState;
 				});
+		}).catch((err) => {
+			console.log(err);
 		});
 });
 
+// Listen for tab changes
 chrome.tabs.onActivated.addListener((activeInfo) => {
-	const iconPath = enabledDictionary[activeInfo.tabId] ? 'icon_enabled.png' : 'icon_disabled.png';
+	const iconPath = enabledDictionary[activeInfo.tabId] ? icon_enabled : icon_disabled;
+	chrome.action.setIcon({ path: iconPath });
+});
+
+// Listen for tab removal
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+	delete enabledDictionary[tabId];
+});
+
+// Listen for tab updates (i.e. tab refresh)
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+	enabledDictionary[tabId] = false;
+	const iconPath = icon_disabled;
 	chrome.action.setIcon({ path: iconPath });
 });
