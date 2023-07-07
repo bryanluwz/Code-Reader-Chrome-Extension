@@ -1,28 +1,100 @@
+// Some variables
 var target = null;
 
+// Hover popup
+const hoverPopup = document.createElement('div');
+hoverPopup.id = 'hoverPopup';
+hoverPopup.style.position = 'absolute';
+hoverPopup.style.backgroundColor = '#fff';
+hoverPopup.style.border = '1px solid #ccc';
+hoverPopup.style.opacity = '0';
+hoverPopup.style.transition = 'opacity 0.3s';
+hoverPopup.style.padding = '10px';
+document.body.appendChild(hoverPopup);
+
+// Enter key popup
+const enterKeyPopup = document.createElement('div');
+enterKeyPopup.id = 'enterKeyPopup';
+enterKeyPopup.style.position = 'fixed';
+enterKeyPopup.style.top = '-50px';
+enterKeyPopup.style.left = '50%';
+enterKeyPopup.style.transform = 'translateX(-50%)';
+enterKeyPopup.style.padding = '10px';
+enterKeyPopup.style.background = '#f0f0f0';
+enterKeyPopup.style.border = '1px solid #ccc';
+enterKeyPopup.style.borderRadius = '4px';
+enterKeyPopup.style.opacity = '0';
+enterKeyPopup.style.transition = 'top 0.5s, opacity 0.5s';
+enterKeyPopup.style.zIndex = '9999';
+enterKeyPopup.style.textAlign = 'center';
+
+// Triggers when user presses enter
 function onDecodeTrigger(e) {
 	// Only process if the target is an image or canvas, and user presses enter
 	if (e.code === 'Enter') {
 		if (target.tagName.toLowerCase() === "img") {
-			e.preventDefault();
 			(async () => {
 				target.crossOrigin = "Anonymous";
 				const link = await detectQRCodesThroughImgElem(target);
-				handleLink(link);
+				handleLinkWhenEnterKey(link);
 			})();
 		}
 		else if (target.tagName.toLowerCase() === "canvas") {
-			e.preventDefault();
 			(async () => {
 				const link = await detectQRCodesThroughCanvas(target);
-				handleLink(link);
+				console.log(link);
+				handleLinkWhenEnterKey(link);
 			})();
 		}
 	}
 }
 
-function onMouseOver(e) {
+// Triggers when user enters an element
+function onMouseEnter(e) {
 	target = e.target;
+
+	if (target.tagName.toLowerCase() === "img") {
+		(async () => {
+			target.crossOrigin = "Anonymous";
+			const link = await detectQRCodesThroughImgElem(target);
+			if (link) {
+				const topPosition = target.offsetTop - hoverPopup.offsetHeight - 10;
+				const leftPosition = target.offsetLeft + (target.offsetWidth - hoverPopup.offsetWidth) / 2;
+
+				hoverPopup.style.position = 'absolute';
+				hoverPopup.style.top = topPosition + 'px';
+				hoverPopup.style.left = leftPosition + 'px';
+
+				hoverPopup.innerHTML = `<div style="display:flex;flex-direction:column;"><span>Content:</span><span>${link}</span><span>Press Enter to copy to clipboard or open in a new tab</span></div>`;
+
+				hoverPopup.style.opacity = '1';
+			}
+		})();
+
+	}
+	else if (target.tagName.toLowerCase() === "canvas") {
+		(async () => {
+			const link = await detectQRCodesThroughCanvas(target);
+			if (link) {
+				const topPosition = target.offsetTop - hoverPopup.offsetHeight - 10;
+				const leftPosition = target.offsetLeft + (target.offsetWidth - hoverPopup.offsetWidth) / 2;
+
+				hoverPopup.style.position = 'absolute';
+				hoverPopup.style.top = topPosition + 'px';
+				hoverPopup.style.left = leftPosition + 'px';
+
+				hoverPopup.innerHTML = `<div style="display:flex;flex-direction:column;"><span>Content:</span><span>${link}</span><span>Press Enter to copy to clipboard or open in a new tab</span></div>`;
+
+				hoverPopup.style.opacity = '1';
+			}
+		})();
+	}
+}
+
+function onMouseLeave(e) {
+	target = null;
+	hoverPopup.style.opacity = '0';
+	// hoverPopup.remove();
 }
 
 // Check for mouse location
@@ -30,18 +102,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (message.action === "updateState") {
 		if (message.enabled) {
 			document.addEventListener("keydown", onDecodeTrigger);
-			document.addEventListener("mouseover", onMouseOver);
+			document.addEventListener("mouseover", onMouseEnter);
+			document.addEventListener("mouseout", onMouseLeave);
 		}
 		else {
 			document.removeEventListener("keydown", onDecodeTrigger);
-			document.removeEventListener("mouseover", onMouseOver);
+			document.removeEventListener("mouseover", onMouseEnter);
+			document.removeEventListener("mouseout", onMouseLeave);
 		}
 	}
 }
 );
 
 // Handle link
-function handleLink(link) {
+function handleLinkWhenEnterKey(link) {
 	// Check if the link is a valid URL
 	const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/;
 	const isURL = urlPattern.test(link);
@@ -58,51 +132,35 @@ function handleLink(link) {
 		}, 500);
 	}
 	// Else if is not URL, copy to clipboard
-	else {
+	else if (link) {
 		message =
-			link ?
-				`<div style="display:flex;flex-direction:column;"><span>Copied to clipboard:</span><span>${link}</span></div>`
-				:
-				"Is this a QR code?";
+			`<div style="display:flex;flex-direction:column;"><span>Copied to clipboard:</span><span>${link}</span></div>`;
 		if (link) {
 			navigator.clipboard.writeText(link);
 		}
 	}
+	// Else if link is null, return
+	else {
+		return;
+	}
 
-	// Create the popup element
-	const popupElement = document.createElement('div');
-
-	popupElement.innerHTML = message;
-
-	popupElement.style.position = 'fixed';
-	popupElement.style.top = '-50px';
-	popupElement.style.left = '50%';
-	popupElement.style.transform = 'translateX(-50%)';
-	popupElement.style.padding = '10px';
-	popupElement.style.background = '#f0f0f0';
-	popupElement.style.border = '1px solid #ccc';
-	popupElement.style.borderRadius = '4px';
-	popupElement.style.opacity = '0';
-	popupElement.style.transition = 'top 0.5s, opacity 0.5s';
-	popupElement.style.zIndex = '9999';
-	popupElement.style.textAlign = 'center';
-
-	// Append the popup element to the document body
-	document.body.appendChild(popupElement);
+	document.body.appendChild(enterKeyPopup);
 
 	// Animate the popup element
-	popupElement.style.top = '10px';
-	popupElement.style.opacity = '1';
+	enterKeyPopup.innerHTML = message;
+	enterKeyPopup.style.top = '10px';
+	enterKeyPopup.style.opacity = '1';
 
 	// Set a timeout to remove the popup after a certain duration (e.g., 3 seconds)
 	setTimeout(() => {
 		// Animate the popup element out
-		popupElement.style.top = '-50px';
-		popupElement.style.opacity = '0';
+		enterKeyPopup.style.top = '-50px';
+
+		enterKeyPopup.style.opacity = '0';
 
 		// Remove the popup element after the animation completes
 		setTimeout(() => {
-			popupElement.remove();
+			enterKeyPopup.remove();
 		}, 200);
 	}, 1500);
 }
