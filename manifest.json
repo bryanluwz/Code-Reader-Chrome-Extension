@@ -4,8 +4,8 @@
     "version": "1.0.0",
     "description": "QR Code Reader Chrome Extension",
     "action": {
-        "default_popup": "popup.html",
-        "default_icon": "icon.png"
+        "default_icon": "icon_disabled.png",
+        "default_title": "Turn me on!"
     },
     "background": {
         "service_worker": "service-worker.js"
@@ -13,9 +13,15 @@
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["content-script.js"]
+            "js": ["dist/content-script.bundle.js"]
         }
     ],
-    "permissions": ["activeTab", "tabs", "scripting", "storage"],
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "scripting",
+        "storage",
+        "clipboardWrite"
+    ],
     "host_permissions": ["http://*/*", "https://*/*"]
 }
