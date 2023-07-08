@@ -4,12 +4,17 @@ var target = null;
 // Hover popup
 const hoverPopup = document.createElement('div');
 hoverPopup.id = 'hoverPopup';
-hoverPopup.style.position = 'absolute';
-hoverPopup.style.backgroundColor = '#fff';
+
+hoverPopup.style.padding = '10px';
+hoverPopup.style.background = '#f0f0f0';
 hoverPopup.style.border = '1px solid #ccc';
+hoverPopup.style.borderRadius = '4px';
 hoverPopup.style.opacity = '0';
 hoverPopup.style.transition = 'opacity 0.3s';
-hoverPopup.style.padding = '10px';
+
+hoverPopup.style.fontFamily = '"Poppins", sans-serif';
+
+hoverPopup.style.zIndex = '9999';
 document.body.appendChild(hoverPopup);
 
 // Enter key popup
@@ -26,6 +31,8 @@ enterKeyPopup.style.borderRadius = '4px';
 enterKeyPopup.style.opacity = '0';
 enterKeyPopup.style.transition = 'top 0.5s, opacity 0.5s';
 enterKeyPopup.style.zIndex = '9999';
+
+enterKeyPopup.style.fontFamily = '"Poppins", sans-serif';
 enterKeyPopup.style.textAlign = 'center';
 
 // Triggers when user presses enter
@@ -58,8 +65,8 @@ function onMouseEnter(e) {
 			target.crossOrigin = "Anonymous";
 			const link = await detectQRCodesThroughImgElem(target);
 			if (link) {
-				const topPosition = target.offsetTop - hoverPopup.offsetHeight - 10;
-				const leftPosition = target.offsetLeft + (target.offsetWidth - hoverPopup.offsetWidth) / 2;
+				const topPosition = Math.max(target.offsetTop, window.scrollY);
+				const leftPosition = Math.max(0, target.offsetLeft);
 
 				hoverPopup.style.position = 'absolute';
 				hoverPopup.style.top = topPosition + 'px';
@@ -76,8 +83,8 @@ function onMouseEnter(e) {
 		(async () => {
 			const link = await detectQRCodesThroughCanvas(target);
 			if (link) {
-				const topPosition = target.offsetTop - hoverPopup.offsetHeight - 10;
-				const leftPosition = target.offsetLeft + (target.offsetWidth - hoverPopup.offsetWidth) / 2;
+				const topPosition = Math.max(target.offsetTop, window.scrollY);
+				const leftPosition = Math.max(0, target.offsetLeft);
 
 				hoverPopup.style.position = 'absolute';
 				hoverPopup.style.top = topPosition + 'px';
@@ -148,13 +155,13 @@ function handleLinkWhenEnterKey(link) {
 
 	// Animate the popup element
 	enterKeyPopup.innerHTML = message;
-	enterKeyPopup.style.top = '10px';
+	enterKeyPopup.style.top = 10 + 'px';
 	enterKeyPopup.style.opacity = '1';
 
 	// Set a timeout to remove the popup after a certain duration (e.g., 3 seconds)
 	setTimeout(() => {
 		// Animate the popup element out
-		enterKeyPopup.style.top = '-50px';
+		enterKeyPopup.style.top = 10 + 'px';
 
 		enterKeyPopup.style.opacity = '0';
 
