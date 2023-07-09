@@ -9,5 +9,13 @@ module.exports = {
 		filename: 'content-script.bundle.js',
 		clean: true
 	},
+	module: {
+		rules: [
+			{
+				test: /\.css$/,
+				use: ['style-loader', 'css-loader'],
+			},
+		],
+	},
 	devtool: 'source-map',
 };

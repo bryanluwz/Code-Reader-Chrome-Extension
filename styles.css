@@ -1,0 +1,67 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
+
+:root {
+    /* Values copied from https://github.com/bryanluwz/gh-pages-common-component/blob/main/appTemplate/AppTemplate.css (2023/7/5) */
+    --lavender-pastel-0: #897197;
+    --lavender-pastel-1: #a98bba;
+    --lavender-pastel-2: #c5a4d4;
+    --lavender-pastel-3: #e1cde4;
+    --lavender-pastel-4: #f3e9f7;
+    --lavender-pastel-5: #f9f5fc;
+
+    --lavender-pastel-font-1: #4e3b39;
+}
+
+.hover-popup {
+    position: absolute;
+
+    padding: 10px;
+
+    width: max(200px, 20vw);
+
+    background: var(--lavender-pastel-5);
+
+    border: 5px solid var(--lavender-pastel-1);
+    border-radius: 10px;
+
+    font-family: "Poppins", sans-serif;
+    color: var(--lavender-pastel-font-1);
+
+    opacity: 0;
+    transition: opacity 0.3s;
+
+    z-index: 9999;
+}
+
+.hover-popup-content-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.alert-popup-content-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.alert-popup {
+    position: fixed;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    padding: 10px;
+
+    background: var(--lavender-pastel-5);
+
+    border: 5px solid var(--lavender-pastel-1);
+    border-radius: 10px;
+
+    font-family: "Poppins", sans-serif;
+    color: var(--lavender-pastel-font-1);
+    text-align: center;
+
+    opacity: 0;
+    transition: top 0.3s, opacity 0.3s;
+
+    z-index: 9999;
+}
