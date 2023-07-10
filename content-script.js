@@ -1,13 +1,15 @@
 import './styles.css';
+import { BrowserQRCodeReader } from '@zxing/browser';
 
 // Some variables
+let codeReader = null;
 var target = null;
+var decoded = null;
 
 // Hover popup
 const hoverPopup = document.createElement('div');
 hoverPopup.id = 'hoverPopup';
 hoverPopup.classList.add('hover-popup');
-document.body.appendChild(hoverPopup);
 
 // Alert popup
 const alertPopup = document.createElement('div');
@@ -16,35 +18,16 @@ alertPopup.classList.add('alert-popup');
 
 // Triggers when user presses some key 
 function onKeyPressHandler(event) {
+	// Ignore if decoded is null
+	if (!decoded) return;
+
+	// When user presses Ctrl C, copy decoded
 	if (event.ctrlKey && event.code === 'KeyC') {
-		if (target.tagName.toLowerCase() === "img") {
-			(async () => {
-				target.crossOrigin = "Anonymous";
-				const decoded = await detectQRCodesThroughImgElem(target);
-				handleDecodedWhenCtrlC(decoded);
-			})();
-		}
-		else if (target.tagName.toLowerCase() === "canvas") {
-			(async () => {
-				const decoded = await detectQRCodesThroughCanvas(target);
-				handleDecodedWhenCtrlC(decoded);
-			})();
-		}
+		handleDecoded(decoded, "CtrlC");
 	}
+	// When user presses Enter, open decoded / copy decoded if no link
 	else if (event.code === 'Enter') {
-		if (target.tagName.toLowerCase() === "img") {
-			(async () => {
-				target.crossOrigin = "Anonymous";
-				const decoded = await detectQRCodesThroughImgElem(target);
-				handleDecodedWhenEnter(decoded);
-			})();
-		}
-		else if (target.tagName.toLowerCase() === "canvas") {
-			(async () => {
-				const decoded = await detectQRCodesThroughCanvas(target);
-				handleDecodedWhenEnter(decoded);
-			})();
-		}
+		handleDecoded(decoded, "Enter");
 	}
 }
 
@@ -52,58 +35,134 @@ function onKeyPressHandler(event) {
 function onMouseEnter(event) {
 	target = event.target;
 
-	if (target.tagName.toLowerCase() === "img") {
+	if (target.tagName.toLowerCase() === "img" || target.tagName.toLowerCase() === "canvas") {
 		(async () => {
-			target.crossOrigin = "Anonymous";
-			const decoded = await detectQRCodesThroughImgElem(target);
-			if (decoded) {
-				hoverPopup.innerHTML = `
+			decoded = await detectQRCodes(target, target.tagName.toLowerCase());
+
+			if (!decoded) return;
+
+			hoverPopup.innerHTML = `
 				<div class="hover-popup-content-container">
-				<span><b>Content:</b></span>
-				<span>${decoded}</span>
-				<span><i>Enter</i> or <i>Ctrl C</i> to open link / copy to clipboard</span>
+					<span class="hover-popup-content-title">Content:</span>
+					<span class="hover-popup-content-content">${decoded}</span>
+					<span class="hover-popup-content-subtitle">"Ctrl C" to copy</span>
+					<span class="hover-popup-content-subtitle">"Enter" to open link</span>
 				</div>`;
 
-				const topPosition = Math.max(target.offsetTop, window.scrollY);
-				const leftPosition = Math.max(0, target.offsetLeft);
+			const boundingRect = target.getBoundingClientRect();
 
-				hoverPopup.style.position = 'absolute';
-				hoverPopup.style.top = topPosition + 'px';
-				hoverPopup.style.left = leftPosition + 'px';
+			// Get position and adjust the position if overlaying
+			let topPosition = Math.max(window.scrollY + boundingRect.top, window.scrollY);
+			let leftPosition = Math.max(window.scrollX + boundingRect.left - hoverPopup.offsetWidth, window.scrollX);
 
-				hoverPopup.style.opacity = '1';
+			if ((leftPosition + hoverPopup.offsetWidth) > (window.scrollX + boundingRect.left)) {
+				leftPosition = boundingRect.right;
 			}
-		})();
 
-	}
-	else if (target.tagName.toLowerCase() === "canvas") {
-		(async () => {
-			const decoded = await detectQRCodesThroughCanvas(target);
-			if (decoded) {
-				hoverPopup.innerHTML = `
-				<div class="hover-popup-content-container">
-				<span><b>Content:</b></span>
-				<span>${decoded}</span>
-				<span><i>Enter</i> or <i>Ctrl C</i> to open link / copy to clipboard</span>
-				</div>`;
+			hoverPopup.style.top = topPosition + 'px';
+			hoverPopup.style.left = leftPosition + 'px';
 
-				const topPosition = Math.max(target.offsetTop - hoverPopup.offsetHeight, window.scrollY);
-				const leftPosition = Math.max(0, target.offsetLeft - hoverPopup.offsetWidth);
-
-				hoverPopup.style.position = 'absolute';
-				hoverPopup.style.top = topPosition + 'px';
-				hoverPopup.style.left = leftPosition + 'px';
-
-				hoverPopup.style.opacity = '1';
-			}
+			hoverPopup.style.opacity = '1';
 		})();
 	}
 }
 
 // Triggers when user leaves an element
 function onMouseLeave(event) {
-	hoverPopup.style.opacity = '0';
-	hoverPopup.style.top = '-1000px';
+	// Remove the popup element if the user is not hovering over the target element 
+	if (event.target === target) {
+		hoverPopup.style.opacity = '0';
+		hoverPopup.style.top = '-1000px';
+	}
+
+	if (decoded) {
+		target = null;
+		decoded = null;
+	}
+}
+
+// Helper function to handle decoded content when user press keys 
+function handleDecoded(decoded, keyPressType) {
+	// Declare some flags and variables
+	const isCtrlC = keyPressType === "CtrlC";
+	const isURL = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(decoded);
+	let message = "";
+
+	// If is CtrlC, copy to clipboard regardless of content
+	// Or if is Enter and not URL, copy to clipboard
+	if (decoded && (isCtrlC || !isCtrlC && !isURL)) {
+		message = `
+			<div class="alert-popup-content-container">
+				<span class="alert-popup-content-title">Copied to Clipboard:</span>
+				<span class="alert-popup-content-content">${decoded}</span>
+			</div>
+			`;
+
+		if (decoded) {
+			navigator.clipboard.writeText(decoded);
+		}
+	}
+	// If is Enter, and is URL, open in new tab
+	else if (decoded && !isCtrlC && isURL) {
+		message = `
+			<div class="alert-popup-content-container">
+				<span class="alert-popup-content-title">Opening in new tab:</span>
+				<span class="alert-popup-content-content">${decoded}</span>
+			</div>`;
+		setTimeout(() => {
+			(async () => {
+				await chrome.runtime.sendMessage({ action: "openNewTab", link: decoded });
+			})();
+		}, 500);
+	}
+	// Else that means decoded is null, so do nothing (assuming keypress is either CtrlC or Enter no other types)
+	else {
+		return;
+	}
+
+	// Put the popup element into the DOM
+	document.body.appendChild(alertPopup);
+
+	alertPopup.innerHTML = message;
+	alertPopup.style.top = 10 + 'px';
+	alertPopup.style.opacity = '1';
+
+	setTimeout(() => {
+		alertPopup.style.top = 10 + 'px';  // Animate the popup element out
+
+		alertPopup.style.opacity = '0';
+
+		// Remove the popup element after the animation completes
+		setTimeout(() => {
+			alertPopup.remove();
+		}, 200);
+	}, 1500);
+}
+
+// Decode QR codes 
+async function detectQRCodes(elem, type) {
+	// Create a new reader
+	if (!codeReader) {
+		codeReader = new BrowserQRCodeReader();
+	}
+	var decoded = null;
+
+	// Decode image from imgSrc
+	try {
+		if (type === "img") {
+			elem.crossOrigin = "Anonymous";
+			const result = await codeReader.decodeFromImageElement(elem);
+			decoded = result.text;
+		}
+		else if (type === "canvas") {
+			const result = await codeReader.decodeFromCanvas(elem);
+			decoded = result.text;
+		}
+	} catch (error) {
+		// No QR code detected
+	}
+
+	return decoded;
 }
 
 // Listen for messages from the background script
@@ -115,137 +174,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			document.addEventListener("keydown", onKeyPressHandler);
 			document.addEventListener("mouseover", onMouseEnter);
 			document.addEventListener("mouseout", onMouseLeave);
+			document.body.appendChild(hoverPopup);
 		}
 		else {
 			document.removeEventListener("keydown", onKeyPressHandler);
 			document.removeEventListener("mouseover", onMouseEnter);
 			document.removeEventListener("mouseout", onMouseLeave);
+			hoverPopup.remove();
 		}
 	}
 }
 );
-
-// Handle decoded content
-function handleDecodedWhenCtrlC(decoded) {
-	var message = "";
-
-	message = `
-	<div class="hover-popup-content-container" style="text-align: center">
-	<b>Copied to Clipboard:</b>
-	<span>${decoded}</span>
-	</div>`;
-
-	if (decoded) {
-		navigator.clipboard.writeText(decoded);
-	}
-
-	document.body.appendChild(alertPopup);
-
-	// Animate the popup element
-	alertPopup.innerHTML = message;
-	alertPopup.style.top = 10 + 'px';
-	alertPopup.style.opacity = '1';
-
-	// Set a timeout to remove the popup after a certain duration (e.g., 3 seconds)
-	setTimeout(() => {
-		// Animate the popup element out
-		alertPopup.style.top = 10 + 'px';
-
-		alertPopup.style.opacity = '0';
-
-		// Remove the popup element after the animation completes
-		setTimeout(() => {
-			alertPopup.remove();
-		}, 200);
-	}, 1500);
-}
-
-function handleDecodedWhenEnter(decoded) {
-	const urlPattern = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/;
-	const isURL = urlPattern.test(decoded);
-
-	var message = "";
-
-	if (isURL) {
-		message = `<b>Opening</b> ${decoded} <b>in a new tab...</b>`;
-		setTimeout(() => {
-			(async () => {
-				await chrome.runtime.sendMessage({ action: "openNewTab", link: decoded });
-			})();
-		}, 500);
-	} else if (decoded) {
-		message = `
-		<div class="alert-popup-content-container" style="text-align: center">
-		<span><b>Copied to Clipboard:</b></span>
-		<span>${decoded}</span>
-		</div>`;
-		navigator.clipboard.writeText(decoded);
-	}
-	else {
-		return;
-	}
-
-	document.body.appendChild(alertPopup);
-
-	// Animate the popup element
-	alertPopup.innerHTML = message;
-	alertPopup.style.top = 10 + 'px';
-	alertPopup.style.opacity = '1';
-
-	// Set a timeout to remove the popup after a certain duration (e.g., 3 seconds)
-	setTimeout(() => {
-		// Animate the popup element out
-		alertPopup.style.top = 10 + 'px';
-
-		alertPopup.style.opacity = '0';
-
-		// Remove the popup element after the animation completes
-		setTimeout(() => {
-			alertPopup.remove();
-		}, 200);
-	}, 1500);
-}
-
-// QR Code Reader
-import { BrowserQRCodeReader } from '@zxing/browser';
-
-let codeReader = null;
-
-// Decode QR code function
-async function detectQRCodesThroughImgElem(img) {
-	// Load ZXing browser
-	// Create a new reader
-	if (!codeReader) {
-		codeReader = new BrowserQRCodeReader();
-	}
-	var decoded = null;
-
-	// Decode image from imgSrc
-	try {
-		const result = await codeReader.decodeFromImageElement(img);
-		decoded = result.text;
-	} catch (error) {
-	}
-
-	return decoded;
-};
-
-
-async function detectQRCodesThroughCanvas(canvas) {
-	// Load ZXing browser
-	// Create a new reader
-	if (!codeReader) {
-		codeReader = new BrowserQRCodeReader();
-	}
-	var decoded = null;
-
-	// Decode image from imgSrc
-	try {
-		const result = await codeReader.decodeFromCanvas(canvas);
-		decoded = result.text;
-	} catch (error) {
-	}
-
-	return decoded;
-};
-
