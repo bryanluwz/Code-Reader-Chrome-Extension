@@ -175,12 +175,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			document.addEventListener("mouseover", onMouseEnter);
 			document.addEventListener("mouseout", onMouseLeave);
 			document.body.appendChild(hoverPopup);
+			sendResponse({ message: "enabled" });
 		}
 		else {
 			document.removeEventListener("keydown", onKeyPressHandler);
 			document.removeEventListener("mouseover", onMouseEnter);
 			document.removeEventListener("mouseout", onMouseLeave);
 			hoverPopup.remove();
+			sendResponse({ message: "disabled" });
 		}
 	}
 }

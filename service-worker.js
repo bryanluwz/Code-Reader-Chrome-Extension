@@ -1,7 +1,7 @@
 var enabledDictionary = {};
 
-const icon_enabled = 'icon_enabled.png';
-const icon_disabled = 'icon_disabled.png';
+const icon_enabled = './icons/icon_enabled.png';
+const icon_disabled = './icons/icon_disabled.png';
 
 // Listen for a click on the extension icon
 chrome.action.onClicked.addListener((tab) => {
@@ -11,43 +11,33 @@ chrome.action.onClicked.addListener((tab) => {
 	// Toggle the state
 	const updatedState = !isEnabled;
 
-	// Save the updated state to storage
-	chrome.storage.local.set({ enabled: updatedState });
-
 	// Set the appropriate icon based on the state
 	const iconPath = updatedState ? icon_enabled : icon_disabled;
 	chrome.action.setIcon({ path: iconPath });
+	chrome.action.setTitle({ title: updatedState ? "Enabled" : "Disabled" });
 
-	// Execute or disable the content script based on the state	
-	// Bruh I swear to GD, there is not content script shown, yet it still works
-	(async () => { console.log(await chrome.scripting.getRegisteredContentScripts()); })()
-		.then(() => {
-			chrome.tabs.sendMessage(tab.id, { action: "updateState", enabled: updatedState })
-				.then(() => {
-					enabledDictionary[tab.id] = updatedState;
-				});
-		}).catch((err) => {
-			console.log(err);
-		});
+	// Execute or disable the content script based on the state
+	updateContentScript(tab.id, updatedState);
 });
 
 // Listen for tab changes
 chrome.tabs.onActivated.addListener((activeInfo) => {
 	const iconPath = enabledDictionary[activeInfo.tabId] ? icon_enabled : icon_disabled;
 	chrome.action.setIcon({ path: iconPath });
+	chrome.action.setTitle({ title: enabledDictionary[activeInfo.tabId] ? "Enabled" : "Disabled" });
 });
 
-// Listen for tab removal (temp disabled)
-// chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-// 	delete enabledDictionary[tabId];
-// });
+// Listen for tab updates
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+	if (changeInfo.status === "complete") {
+		const updatedState = enabledDictionary[tabId];
+		const iconPath = enabledDictionary[tab.tabId] ? icon_enabled : icon_disabled;
+		chrome.action.setIcon({ path: iconPath });
+		chrome.action.setTitle({ title: updatedState ? "Enabled" : "Disabled" });
 
-// Listen for tab updates (i.e. tab refresh) (temp disabled)
-// chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-// 	enabledDictionary[tabId] = false;
-// 	const iconPath = icon_disabled;
-// 	chrome.action.setIcon({ path: iconPath });
-// });
+		updateContentScript(tabId, enabledDictionary[tab.tabId]);
+	}
+});
 
 // Listen for messages from content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -56,3 +46,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		sendResponse({ success: true });
 	}
 });
+
+function updateContentScript(tabId, updatedState) {
+	// Execute or disable the content script based on the state	
+	(async () => {
+		// Dont remove this useless line of code otherwise it won't run properly idk why
+		await chrome.scripting.getRegisteredContentScripts();
+	})()
+		.then(() => {
+			chrome.tabs.sendMessage(tabId, { action: "updateState", enabled: updatedState })
+				.then((response) => {
+					enabledDictionary[tabId] = updatedState;
+				})
+				.catch((err) => {
+					console.log(err);
+				});
+		}).catch((err) => {
+			console.log(err);
+		});
+}
