@@ -1,5 +1,5 @@
 import './styles.css';
-import { BrowserQRCodeReader } from '@zxing/browser';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 
 // Some variables
 let codeReader = null;
@@ -143,7 +143,7 @@ function handleDecoded(decoded, keyPressType) {
 async function detectQRCodes(elem, type) {
 	// Create a new reader
 	if (!codeReader) {
-		codeReader = new BrowserQRCodeReader();
+		codeReader = new BrowserMultiFormatReader();
 	}
 	var decoded = null;
 

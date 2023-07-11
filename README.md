@@ -1,21 +1,40 @@
-# QR Code Reader Chrome Extension
+# Code Reader Chrome Extension
 
-QR Code Reader Chrome Extension
+Code Reader Chrome Extension
 
 ## Features
 
-1. While hovering over a QR Code image / canvas html element, it will show a hover popup that displays the content of the QR Code.
-2. While the hovering popup is active, the user can press Ctrl C to copy the content to the user's clipboard, or press enter to open the link (if it's a link, otherwise it'll just copy to clipboard) in a new tab.
+1. Works on QR Code, Barcode, PDF417 Code, and possibly other code format that I did not mention, so I'll just use "Code" hereinafter.
+2. While hovering over a Code `image` / `canvas` html element, it will show a hover popup that displays the decoded content of the Code.
+3. While the hovering popup is active, use
+    - `"Ctrl C"` to copy the content to the user's clipboard
+    - `"Enter"` to open the link (if it's a link, otherwise it'll just copy to clipboard) in a new tab.
+
+## Not Features
+
+1. Only works on `http://` and `https://` websites, does not work on local files.
+2. Does not show anything when Code cannot be detected.
 
 ## Issues
 
-1. If the hover popup is overlapping the QR Code, then stuttering might occur, due to the popup being repeatedly moved into view and out of view.
-2. Not all QR Code can be detected.
-3. Positioning of popups is a bit awkward ~~(and i dont feel like fixing it)~~, especially for QR Code shown on image html element.
+1. Not all Code can be detected.
+2. Does not work when some element is overlapping the Code.
 
-## Afterwords
+## How to use
 
-1. Do I want to fix the issues?
-    > No
-2. How to use
-    > 内緒
+1. Download repository
+2. Go to extensions page
+3. Enable `Developer mode`
+4. Click on `Load unpacked`
+5. Select the repository
+6. Enable extension in extensions page
+7. (Extension is disabled on every webpage by default, turn it on before using it)
+8. Stonks
+
+## WIP
+
+1. Chrome extension store??
+
+## Arigatou
+
+1. [zxing-js/browser](https://github.com/zxing-js/browser/tree/master)
