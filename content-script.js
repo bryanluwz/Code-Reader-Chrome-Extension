@@ -150,8 +150,11 @@ async function detectQRCodes(elem, type) {
 	// Decode image from imgSrc
 	try {
 		if (type === "img") {
-			elem.crossOrigin = "Anonymous";
-			const result = await codeReader.decodeFromImageElement(elem);
+			// Clone the element and set crossOrigin to Anonymous
+			let clonedElem = elem.cloneNode(false);
+			clonedElem.crossOrigin = "Anonymous";
+
+			const result = await codeReader.decodeFromImageElement(clonedElem);
 			decoded = result.text;
 		}
 		else if (type === "canvas") {
