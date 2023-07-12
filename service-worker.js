@@ -1,3 +1,5 @@
+console.log("Service worker loaded");
+
 var enabledDictionary = {};
 
 const icon_enabled = './icons/icon_enabled.png';
@@ -22,20 +24,23 @@ chrome.action.onClicked.addListener((tab) => {
 
 // Listen for tab changes
 chrome.tabs.onActivated.addListener((activeInfo) => {
-	const iconPath = enabledDictionary[activeInfo.tabId] ? icon_enabled : icon_disabled;
+	const updatedState = enabledDictionary[activeInfo.tabId];
+	const iconPath = updatedState ? icon_enabled : icon_disabled;
+
 	chrome.action.setIcon({ path: iconPath });
-	chrome.action.setTitle({ title: enabledDictionary[activeInfo.tabId] ? "Enabled" : "Disabled" });
+	chrome.action.setTitle({ title: updatedState ? "Enabled" : "Disabled" });
 });
 
 // Listen for tab updates
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 	if (changeInfo.status === "complete") {
 		const updatedState = enabledDictionary[tabId];
-		const iconPath = enabledDictionary[tab.tabId] ? icon_enabled : icon_disabled;
+		const iconPath = updatedState ? icon_enabled : icon_disabled;
+
 		chrome.action.setIcon({ path: iconPath });
 		chrome.action.setTitle({ title: updatedState ? "Enabled" : "Disabled" });
 
-		updateContentScript(tabId, enabledDictionary[tab.tabId]);
+		updateContentScript(tabId, updatedState);
 	}
 });
 
