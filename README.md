@@ -5,7 +5,7 @@ Code Reader Chrome Extension
 ## Features
 
 1. Works on QR Code, Barcode, PDF417 Code, and possibly other code format that I did not mention, so I'll just use "Code" hereinafter.
-2. While hovering over a Code `image` / `canvas` html element, it will show a hover popup that displays the decoded content of the Code.
+2. While hovering over a Code `image` / `canvas` / `video` html element, it will show a hover popup that displays the decoded content of the Code.
 3. While the hovering popup is active, use
     - `"Ctrl C"` to copy the content to the user's clipboard
     - `"Enter"` to open the link (if it's a link, otherwise it'll just copy to clipboard) in a new tab.
@@ -14,6 +14,7 @@ Code Reader Chrome Extension
 
 1. Only works on `http://` and `https://` websites, does not work on local files.
 2. Does not show anything when Code cannot be detected.
+3. Bundle size of content-script.js is rather huge (idk how to make it any smoller bruv)
 
 ## Issues
 
@@ -33,7 +34,7 @@ Code Reader Chrome Extension
 
 ## WIP
 
-1. Chrome extension store??
+1. Chrome extension store?? (probably not im lazy)
 
 ## Arigatou
 

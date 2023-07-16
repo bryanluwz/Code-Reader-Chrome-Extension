@@ -35,7 +35,7 @@ function onKeyPressHandler(event) {
 function onMouseEnter(event) {
 	target = event.target;
 
-	if (target.tagName.toLowerCase() === "img" || target.tagName.toLowerCase() === "canvas") {
+	if (target.tagName.toLowerCase() === "img" || target.tagName.toLowerCase() === "canvas" || target.tagName.toLowerCase() === "video") {
 		(async () => {
 			decoded = await detectQRCodes(target, target.tagName.toLowerCase());
 
@@ -158,7 +158,19 @@ async function detectQRCodes(elem, type) {
 			decoded = result.text;
 		}
 		else if (type === "canvas") {
+			// Read from canvas
 			const result = await codeReader.decodeFromCanvas(elem);
+			decoded = result.text;
+		}
+		else if (type === "video") {
+			// Convert to canvas then read from canvas 
+			const canvas = document.createElement('canvas');
+			const context = canvas.getContext('2d');
+			canvas.width = elem.videoWidth;
+			canvas.height = elem.videoHeight;
+			context.drawImage(elem, 0, 0, canvas.width, canvas.height);
+
+			const result = await codeReader.decodeFromCanvas(canvas);
 			decoded = result.text;
 		}
 	} catch (error) {
