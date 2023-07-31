@@ -6,6 +6,8 @@ let codeReader = null;
 var target = null;
 var decoded = null;
 
+let isCaptureMode = false;
+
 // Hover popup
 const hoverPopup = document.createElement('div');
 hoverPopup.id = 'hoverPopup';
@@ -16,8 +18,44 @@ const alertPopup = document.createElement('div');
 alertPopup.id = 'alert-popup';
 alertPopup.classList.add('alert-popup');
 
+// Capture mode capture square
+const captureSquare = document.createElement('div');
+captureSquare.id = 'capture-square';
+captureSquare.classList.add('capture-square');
+
 // Triggers when user presses some key 
 function onKeyPressHandler(event) {
+	// Check if go to capture mode (ctrl shift U)
+	if (event.ctrlKey && event.shiftKey && event.code === 'KeyU') {
+		event.preventDefault();
+
+		isCaptureMode = !isCaptureMode;
+
+		updateCaptureMode(event);
+	}
+
+	// If capture mode check for larger or smaller square ([ or ])
+	if (isCaptureMode) {
+		if (event.code === "BracketLeft") {
+			event.preventDefault();
+
+			const height = Math.max(20, captureSquare.offsetHeight - 10);
+			const width = height;
+
+			captureSquare.style.width = width + 'px';
+			captureSquare.style.height = height + 'px';
+		}
+		else if (event.code === "BracketRight") {
+			event.preventDefault();
+
+			const height = Math.min(window.innerHeight, captureSquare.offsetHeight + 10);
+			const width = height;
+
+			captureSquare.style.width = width + 'px';
+			captureSquare.style.height = height + 'px'; s;
+		}
+	}
+
 	// Ignore if decoded is null
 	if (!decoded) return;
 
@@ -28,6 +66,103 @@ function onKeyPressHandler(event) {
 	// When user presses Enter, open decoded / copy decoded if no link
 	else if (event.code === 'Enter') {
 		handleDecoded(decoded, "Enter");
+	}
+}
+
+// Capture mode
+function updateCaptureMode(event = null) {
+	if (isCaptureMode) {
+		// Change cursor to crosshair, and a square border to where the mouse 
+		document.body.style.cursor = "crosshair";
+		document.body.appendChild(captureSquare);
+
+		if (!event) {
+			captureSquare.style.top = event.pageY + 'px';
+			captureSquare.style.left = event.pageX + 'px';
+		}
+
+		// Add event listener to capture square that moves to wherever the mouse is
+		document.addEventListener("mousemove", onMouseMoveForCaptureMode);
+		document.addEventListener("click", onMouseClickForCaptureMode);
+	}
+	else {
+		// Change cursor back to default, and remove the square border
+		document.body.style.cursor = "default";
+		captureSquare.remove();
+
+		// Remove event listener
+		document.removeEventListener("mousemove", onMouseMoveForCaptureMode);
+		document.removeEventListener("click", onMouseClickForCaptureMode);
+	}
+}
+
+// Triggers when user moves mouse in capture mode
+function onMouseMoveForCaptureMode(event) {
+	if (isCaptureMode) {
+		// Calculate the new top and left of the capture square
+		let boundingRect = captureSquare.getBoundingClientRect();
+		const width = boundingRect.width;
+		const height = boundingRect.height;
+		const top = (event.pageY + height) > (window.scrollY + window.innerHeight) ? window.scrollY + window.innerHeight - height - 10 : event.pageY;
+		const left = (event.pageX + width) > (window.scrollX + window.innerWidth) ? window.scrollX + window.innerWidth - width - 10 : event.pageX;
+
+		// Move the capture square to where the mouse is, unless the resulting box exceeds window size
+		captureSquare.style.top = top + 'px';
+		captureSquare.style.left = left + 'px';
+	}
+}
+
+// Triggers when user clicks in capture mode
+function onMouseClickForCaptureMode(event) {
+	event.preventDefault();
+
+	// If left click, capture the visible tab
+	if (event.button === 0) {
+		chrome.runtime.sendMessage({ action: "captureVisibleTab", canvasStyle: captureSquare.style })
+			.then(response => {
+				// Get the dataUrl from the response
+				const dataUrl = response.dataUrl;
+
+				const canvas = document.createElement("canvas");
+				const context = canvas.getContext("2d");
+
+				// Get the capture square's position and size using the style attribute
+				let boundingRect = captureSquare.getBoundingClientRect();
+				const left = window.scrollX + boundingRect.left;
+				const top = window.scrollY + boundingRect.top;
+				const width = boundingRect.width;
+				const height = boundingRect.height;
+
+				const image = new Image();
+				image.src = dataUrl;
+
+				image.onload = () => {
+					// Image not same as window inner height and width, so scale it down, bruh this is so stupid it took me an hour to figure out why it isn't working
+					const scaleFactor = Math.min(window.innerWidth / image.width, window.innerHeight / image.height);
+					const scaleFactorInverse = 1 / scaleFactor;
+
+					// Set canvas top and left to capture square's top and left
+					canvas.style.position = 'absolute';
+					canvas.style.top = top + 'px';
+					canvas.style.left = left + 'px';
+					canvas.style.zIndex = "9999";
+
+					// I don't know why this is important but it works	
+					canvas.width = width;
+					canvas.height = height;
+
+					// Draw image cropped to the capture square
+					context.drawImage(image, boundingRect.left * scaleFactorInverse, boundingRect.top * scaleFactorInverse, width * scaleFactorInverse, height * scaleFactorInverse, 0, 0, width, height);
+
+					// Gotta kinda cheese the onMouseEnter event here
+					// Create fake event with only the necessary information
+					const fakeEvent = {
+						target: canvas,
+					};
+
+					onMouseEnter(fakeEvent);
+				};
+			});
 	}
 }
 

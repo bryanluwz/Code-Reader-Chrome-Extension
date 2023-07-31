@@ -50,6 +50,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		chrome.tabs.create({ url: message.link });
 		sendResponse({ success: true });
 	}
+	else if (message.action === "captureVisibleTab") {
+		chrome.tabs.captureVisibleTab(null, { format: "png" },
+			dataUrl => {
+				sendResponse({ dataUrl: dataUrl });
+			});
+	}
+	return true;  // async response
 });
 
 function updateContentScript(tabId, updatedState) {

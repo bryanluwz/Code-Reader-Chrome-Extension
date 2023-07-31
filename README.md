@@ -6,8 +6,9 @@ Code Reader Chrome Extension
 
 1. Works on QR Code, Barcode, PDF417 Code, and possibly other code format that I did not mention, so I'll just use "Code" hereinafter.
 2. While hovering over a Code `image` / `canvas` / `video` html element, it will show a hover popup that displays the decoded content of the Code.
-3. While the hovering popup is active, use
-    - `"Ctrl C"` to copy the content to the user's clipboard
+3. User `"Ctrl Shift U"` to toggle capture mode, `Left Click` to capture, and perchance a hover popup will appear.
+4. While the hovering popup is active, use
+    - `"Ctrl C"` to copy the content to the user's clipboard,
     - `"Enter"` to open the link (if it's a link, otherwise it'll just copy to clipboard) in a new tab.
 
 ## Not Features
@@ -18,10 +19,10 @@ Code Reader Chrome Extension
 
 ## Issues
 
-1. Not all Code can be detected.
+1. Not all Code can be detected (i dont know which ok?)
 2. Does not work when some element is overlapping the Code.
 
-## How to use
+## How to install
 
 1. Download repository
 2. Go to extensions page
@@ -32,9 +33,17 @@ Code Reader Chrome Extension
 7. (Extension is disabled on every webpage by default, turn it on before using it)
 8. Stonks
 
-## WIP
+## How to use
 
-1. Chrome extension store?? (probably not im lazy)
+1. Click on extension icon to enable it in that tab
+2. Hover over Code to reveal encoded data
+3. If Code is an image / HTML object by itself, then use `"Ctrl Shift U"` to toggle Capture Mode, left click to capture that Code
+    - `[` to make it smaller
+    - `]` to make it larger
+
+## Future Plans
+
+1. Chrome extension store?? (probably not im broke)
 
 ## Arigatou
 

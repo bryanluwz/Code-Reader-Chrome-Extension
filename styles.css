@@ -89,3 +89,17 @@
     font-size: 1.4em;
     font-weight: bolder;
 }
+
+.capture-square {
+    position: absolute;
+
+    width: 200px;
+    height: 200px;
+
+    border: 5px solid var(--lavender-pastel-1);
+    border-radius: 10px;
+
+    z-index: 9999;
+
+    box-sizing: border-box;
+}
