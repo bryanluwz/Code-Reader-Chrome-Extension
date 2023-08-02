@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Code Reader Chrome Extension",
-    "version": "1.0.0",
-    "description": "Code Reader Chrome Extension",
+    "version": "1.0.2",
+    "description": "Code Reader Chrome Extension lets you read QR Codes, Barcodes and Data Matrixes from your browser.",
     "action": {
         "default_icon": "./icons/icon_disabled.png",
         "default_title": "Turn me on!"

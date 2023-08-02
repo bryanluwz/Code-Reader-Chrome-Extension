@@ -25,13 +25,27 @@ captureSquare.classList.add('capture-square');
 
 // Triggers when user presses some key 
 function onKeyPressHandler(event) {
-	// Check if go to capture mode (ctrl shift U)
+	// If Ctrl Shift U, toggle capture mode
 	if (event.ctrlKey && event.shiftKey && event.code === 'KeyU') {
 		event.preventDefault();
 
 		isCaptureMode = !isCaptureMode;
 
 		updateCaptureMode(event);
+	}
+	// Else if escape, exit capture mode
+	else if (event.code === 'Escape') {
+		event.preventDefault();
+
+		isCaptureMode = false;
+
+		updateCaptureMode(event);
+	}
+	// Else if Ctrl Shift Y, trigger decode by clipboard
+	else if (event.ctrlKey && event.shiftKey && event.code === 'KeyY') {
+		event.preventDefault();
+
+		onDecodeClipboard(event);
 	}
 
 	// If capture mode check for larger or smaller square ([ or ])
@@ -154,16 +168,46 @@ function onMouseClickForCaptureMode(event) {
 					// Draw image cropped to the capture square
 					context.drawImage(image, boundingRect.left * scaleFactorInverse, boundingRect.top * scaleFactorInverse, width * scaleFactorInverse, height * scaleFactorInverse, 0, 0, width, height);
 
-					// Gotta kinda cheese the onMouseEnter event here
-					// Create fake event with only the necessary information
-					const fakeEvent = {
-						target: canvas,
-					};
-
-					onMouseEnter(fakeEvent);
+					detectQRCodes(canvas, "canvas")
+						.then(decoded => { handleDecoded(decoded, "CtrlC"); });
 				};
 			});
 	}
+}
+
+// Triggers when user Ctrl Shift Y, trigger decode by clipboard
+function onDecodeClipboard(event) {
+	event.preventDefault();
+
+	if (!(navigator.clipboard && typeof navigator.clipboard.read === 'function')) {
+		console.log("Clipboard API not supported");
+	}
+
+	// Get image from clipboard
+	navigator.clipboard.read()
+		.then(clipboardItems => {
+			clipboardItems.forEach(clipboardItem => {
+				clipboardItem.types.forEach(type => {
+					if (type.startsWith("image/")) {
+						const imageFormat = type.substring(6);
+						clipboardItem.getType(`image/${imageFormat}`).then(blob => {
+							blobToBase64(blob)
+								.then(dataUrl => {
+									const image = document.createElement("img");
+									image.src = dataUrl;
+
+									detectQRCodes(image, "img")
+										.then(decoded => { handleDecoded(decoded, "CtrlC"); });
+								});
+						});
+					}
+				});
+			});
+		}
+		)
+		.catch(err => {
+			console.log(err);
+		});
 }
 
 // Triggers when user enters an element
@@ -218,6 +262,8 @@ function onMouseLeave(event) {
 
 // Helper function to handle decoded content when user press keys 
 function handleDecoded(decoded, keyPressType) {
+	console.log(decoded);
+
 	// Declare some flags and variables
 	const isCtrlC = keyPressType === "CtrlC";
 	const isURL = /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/.test(decoded);
@@ -313,6 +359,15 @@ async function detectQRCodes(elem, type) {
 	}
 
 	return decoded;
+}
+
+// Helper function (https://stackoverflow.com/questions/18650168/convert-blob-to-base64/18650249#18650249)
+function blobToBase64(blob) {
+	return new Promise((resolve, _) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result);
+		reader.readAsDataURL(blob);
+	});
 }
 
 // Listen for messages from the background script
